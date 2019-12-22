@@ -28,6 +28,49 @@ def generate_data(a, b, mvar, pvar, xrange, nsamples=25, nptspersample=20, resol
 
     return xvec, yvec, t, f
 
+
+def generate_data4D(a, b, mvar, pvar, xrange, nsamples, nptspersample, nbacteria, resolution):
+    tvec=[]
+    fvec=[]
+    xmat=[]
+    ymat=[]
+
+    for i in range(int(nbacteria)):
+        try:
+            t = np.linspace(- np.abs(xrange[i])/2, np.abs(xrange[i]) /
+                            2, np.abs(xrange[i])/resolution)
+        except:
+            import pdb
+            pdb.set_trace()
+        f = sigmoid(t, a[i], b[i]) - xrange[i]/2
+        tvec.append(t)
+        fvec.append(f)
+        xvec = []
+        yvec = []
+        ns = 0
+
+        while ns < nsamples:
+            xin = [(f.max()-f.min())*np.random.rand() + f.min()]
+            # xout = []
+            for iterate in range(nptspersample):
+                xin.append(xin[-1] + resolution*sigmoid(xin[-1], a[i],
+                                                        b[i]) + np.random.normal(0, np.sqrt(pvar)))
+            #     if iterate < 99:
+            #         xin.append(xout[-1])
+                # import pdb; pdb.set_trace()
+
+            xin = np.array(xin)
+            y = xin + np.random.normal(0, np.sqrt(mvar), size=xin.shape)
+            if np.var(xin)/np.var(y) > .5:
+                ns += 1
+                xvec.append(xin)
+                yvec.append(y)
+        
+        xmat.append(xvec)
+        ymat.append(yvec)
+
+    return np.array(xmat), np.array(ymat), tvec, fvec
+
 def spline_change_pts(states):
     nvec = []
     for s in states:

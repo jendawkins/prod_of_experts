@@ -3,8 +3,8 @@ import numpy as np
 import scipy.stats as st
 import matplotlib.pyplot as plt
 
-class SplineLearnerPOE():
-    def __init__(self, true_a=-10, true_b=.1, MEAS_VAR=5, PROC_VAR=100, THETA_VAR=100, AVAR=100, BVAR=100, POE_VAR=100, NSAMPS=10, NPTSPERSAMP=20,DT=.1):
+class SplineLearnerPOE_4D():
+    def __init__(self, true_a=[-10,-100,-75], true_b=[.1,22,6], num_bact=3, MEAS_VAR=5, PROC_VAR=100, THETA_VAR=100, AVAR=100, BVAR=100, POE_VAR=100, NSAMPS=10, NPTSPERSAMP=20,DT=.1):
         self.theta_var = THETA_VAR
         self.mvar = MEAS_VAR
         self.pvar = PROC_VAR
@@ -14,53 +14,59 @@ class SplineLearnerPOE():
         self.true_b = true_b
         self.dt = DT
         self.plot_iter = 10
+        self.num_mice = NSAMPS
+        self.num_states = NPTSPERSAMP
+        self.num_bugs = num_bact
 
         self.alpha = 2
         self.beta_mvar = self.mvar / (self.alpha - 1)
         self.beta_pvar = self.pvar / (self.alpha - 1)
         
         self.k = 3
-        self.states, self.observations, self.time, self.f = generate_data(
-            self.true_a, self.true_b, self.mvar, self.pvar*self.dt, self.true_a, NSAMPS, NPTSPERSAMP,DT)
+        self.states, self.observations, self.time, self.f = generate_data4D(
+            self.true_a, self.true_b, self.mvar, self.pvar*self.dt, self.true_a, self.num_mice, self.num_states, self.num_bugs, self.dt)
 
-        num_knots = len(self.states[0])-self.k
-        self.mu_betas = np.mean(self.f)*np.ones(num_knots)
-        # import pdb; pdb.set_trace()
-        all_states = np.concatenate(self.states)
-        # import pdb; pdb.set_trace()
-        self.knots = np.linspace(
-            min(all_states) + .01, max(all_states)-.01, num_knots)
+        num_knots = len(self.states[0][0])-self.k
 
-        self.poe_var = POE_VAR*np.eye(len(self.states[0]))
+        self.mu_betas = np.array([np.mean(self.f[i])*np.ones(num_knots) for i in range(len(self.f))]).T
+
+        # self.states --> bugs x mice x timepoints
+
+        all_states = [np.concatenate(self.states[i,:,:]) for i in range(self.num_bugs)]
+        # import pdb; pdb.set_trace()
+        self.knots = [np.linspace(
+            min(all_states[i]) + .01, max(all_states[i])-.01, num_knots) for i in range(self.num_bugs)]
+
+        self.poe_var = POE_VAR*np.eye(self.num_states+1)
         self.beta_poevar = self.poe_var / (self.alpha - 1)
 
-        self.true_bmat1 = [self.calc_bmat(sta[:-1]) for sta in self.states]
-        self.true_bmat2 = [self.calc_bmat(sta) for sta in self.states]
+        self.true_bmat1 = [[self.calc_bmat(sta[:-1],i) for sta in self.states[i,:,:]] for i in range(num_bact)]
+        self.true_bmat2 = [[self.calc_bmat(sta,i) for sta in self.states[i,:,:]] for i in range(num_bact)]
         # y = beta*bmat
-        self.ys = [(self.states[i][1:]-self.states[i][:-1])/self.dt for i in range(len(self.states))]
         # import pdb; pdb.set_trace()
-        self.true_betas = [np.linalg.lstsq(self.true_bmat1[i],self.ys[i])[0] for i in range(len(self.true_bmat1))]
+        self.ys = [[(self.states[j,i,1:]-self.states[j,i,:-1])/self.dt for i in range(self.num_mice)] for j in range(self.num_bugs)]
+        self.true_betas = [[np.linalg.lstsq(self.true_bmat1[j][i],self.ys[j][i])[0] for i in range(len(self.true_bmat1))] for j in range(self.num_bugs)]
 
-    def bsplines(self, xi, x, k=3):
+    def bsplines(self, xi, x, bug, k=3):
         # knots = np.linspace(x.min() + .01, x.max()-.01, num_knots)
-        bmat = np.zeros((len(self.knots), k))
+        bmat = np.zeros((len(self.knots[bug]), k))
         for ki in range(k):
-            for i in np.arange(len(self.knots)-ki-2, 0, -1):
+            for i in np.arange(len(self.knots[bug])-ki-2, 0, -1):
                 if ki == 0:
-                    if self.knots[i] <= xi <= self.knots[i+1]:
+                    if self.knots[bug][i] <= xi <= self.knots[bug][i+1]:
                         bmat[i, ki] = 1
                     else:
                         bmat[i, ki] = 0
                 else:
-                    bmat[i, ki] = ((xi-self.knots[i])*bmat[i, ki-1])/(self.knots[i+ki+1-1]-self.knots[i]) + (
-                        (self.knots[i+ki+1] - xi)*bmat[i+1, ki-1])/(self.knots[i+ki+1]-self.knots[i+1])
+                    bmat[i, ki] = ((xi-self.knots[bug][i])*bmat[i, ki-1])/(self.knots[bug][i+ki+1-1]-self.knots[bug][i]) + (
+                        (self.knots[bug][i+ki+1] - xi)*bmat[i+1, ki-1])/(self.knots[bug][i+ki+1]-self.knots[bug][i+1])
         return bmat
 
-    def calc_bmat(self,x,k=3):
-        nknots = len(self.knots)
+    def calc_bmat(self,x,bug,k=3):
+        nknots = len(self.knots[bug])
         bmat = np.zeros((len(x), nknots))
         for i, xi in enumerate(x):
-            bmat[i, :] = self.bsplines(xi, np.array(x), nknots)[:, k-1]
+            bmat[i, :] = self.bsplines(xi, np.array(x), bug)[:, k-1]
         return bmat
 
     # Redo overleaf by keeping f1 and f2
@@ -171,9 +177,10 @@ class SplineLearnerPOE():
         
         for i, y in enumerate(self.observations):
             x0 = self.states[i][0]
-            x = np.random.normal(x0, 10, size=self.states[0].shape[0])
-            f1 = np.random.normal(0, np.sqrt(self.theta_var), size=self.states[0].shape[0])
-            f2 = np.random.normal(0, np.sqrt(self.theta_var), size=self.states[0].shape[0])
+            x = np.random.normal(x0, 10, size=self.states.shape[-1])
+            import pdb; pdb.set_trace()
+            f1 = np.random.normal(0, np.sqrt(self.theta_var), size=self.states.shape[-1])
+            f2 = np.random.normal(0, np.sqrt(self.theta_var), size=self.states.shape[-1])
             if train_var:
                 # import pdb; pdb.set_trace()
                 # self.mvar = self.update_mvar(x,y)
@@ -373,5 +380,5 @@ class SplineLearnerPOE():
             self.trace_f2.append(f2vec)
             self.trace_beta.append(betavec)
             # import pdb; pdb.set_trace()
-            print('Observation ' + str(i) + ' Complete at ' + str(s) + 'steps')
+            print('Observation ' + str(i) + ' Complete')
 
