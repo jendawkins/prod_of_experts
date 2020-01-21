@@ -1,18 +1,8 @@
-'''This is a function to run many different instances on the cluster
-'''
-import numpy as np
-import os
-import shutil
-import argparse
 
-measurement_noises = [0.01, 0.05, 0.1, 0.15]
-use_mm = [0,1]
-
-my_str = '''
 #!/bin/bash
 #BSUB -J pylab
-#BSUB -o {3}.out
-#BSUB -e {3}.err
+#BSUB -o outdir_mvar0,01_MM0.out
+#BSUB -e outdir_mvar0,01_MM0.err
 
 # This is a sample script with specific resource requirements for the
 # **bigmemory** queue with 64GB memory requirement and memory
@@ -68,28 +58,4 @@ module load anaconda/default
 source activate dispatcher
 
 cd /PHShome/dek15/perturbation_study/
-python3 ./main.py -MM {0} -a 1 -b 0.5 -nb 3 -mv {1} -pv 1 -tv 1 -bv 1 -av 1 -poe 1 -no 2 -ns 500 -dt 0.01 -o {2}
-'''
-
-# Make the directories to store the information
-
-#try:
-#    os.mkdir(basepath)
-#except OSError:
-    # Remove the directory and then make one
-#    shutil.rmtree(basepath)
-#    os.mkdir(basepath)
-basepath = 'outdir'
-
-for m in use_mm:
-
-    for mn in measurement_noises:
-        outdir = 'outdir_mvar' + str(mn).replace('.', ',') + '_MM' + str(m)
-
-        fname = outdir + '.lsf'
-
-        f = open(fname,'w')
-        f.write(my_str.format(m,mn,outdir,outdir))
-        f.close()
-
-        os.system('bsub < {}'.format(fname))
+python3 ./main.py -MM 0 -a 1 -b 0.5 -nb 3 -mv 0.01 -pv 1 -tv 1 -bv 1 -av 1 -poe 1 -no 2 -ns 500 -dt 0.01 -o outdir_mvar0,01_MM0
