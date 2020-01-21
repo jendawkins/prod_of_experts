@@ -2,6 +2,7 @@ from helper import *
 import numpy as np
 import scipy.stats as st
 import matplotlib.pyplot as plt
+from scipy import interpolate
 
 class SplineLearnerPOE():
     def __init__(self, true_a=-10, true_b=.1, MEAS_VAR=5, PROC_VAR=100, THETA_VAR=100, AVAR=100, BVAR=100, POE_VAR=100, NSAMPS=10, NPTSPERSAMP=20,DT=.1):
@@ -14,6 +15,7 @@ class SplineLearnerPOE():
         self.true_b = true_b
         self.dt = DT
         self.plot_iter = 10
+        self.gibbs_var = 100
 
         self.alpha = 2
         self.beta_mvar = self.mvar / (self.alpha - 1)
@@ -22,6 +24,14 @@ class SplineLearnerPOE():
         self.k = 3
         self.states, self.observations, self.time, self.f = generate_data(
             self.true_a, self.true_b, self.mvar, self.pvar*self.dt, self.true_a, NSAMPS, NPTSPERSAMP,DT)
+
+
+        # import pdb; pdb.set_trace()
+        f = [interpolate.interp1d(np.arange(len(self.states[i])),self.states[i]) for i in range(len(self.states))]
+        self.plot_states = [f[i](np.linspace(0, len(self.states[i])-1, 100)) for i in range(len(self.states))]
+        # out = generate_data(
+        #     self.true_a, self.true_b, self.mvar, self.pvar*self.dt, self.true_a, NSAMPS, NPTSPERSAMP, DT/11)
+        # self.plot_states = out[0]
 
         num_knots = len(self.states[0])-self.k
         self.mu_betas = np.mean(self.f)*np.ones(num_knots)
@@ -82,28 +92,39 @@ class SplineLearnerPOE():
         # mu_theta = (1/self.pvar)*(sig_theta@(bmat.T@np.expand_dims(obs, 1)))
         return mu_theta, sig_theta
 
-    def px(self,x,y,x0,betas,prior_var=.5, k=3):
+    def px(self,x,y,x0,betas,theta_2,prior_var=.5, k=3):
         bmat = self.calc_bmat(x[:-1])
+        f1 = x[:-1] + self.dt*(betas@bmat.T)
+        f2 = x[:-1] + self.dt*sigmoid(x[:-1], theta_2[0],theta_2[1])
         xy = (x[1:] - x[:-1])/self.dt
         part1 = (-.5*((x[0]-x0)**2)*(1/prior_var))
         part2 = (np.sum((xy-betas@bmat.T)**2)*(-.5)*(1/(self.dt*self.pvar)))
         part3 = (-0.5*((y-x).T@(y-x))*(1/self.mvar))
-        # import pdb; pdb.set_trace()
-        return part1 + part2 + part3
+        part4 = -.5*((f1-f2).T@np.linalg.inv(self.poe_var[:-1,:-1])@(f1-f2))
+        return part1 + part2 + part3 + part4
 
-    def update_x(self,x,y,x0,betas):
+    def update_x(self,x,y,x0,betas, theta_2):
         x = x.astype(float)
         xp = x.copy()
 
         sig = 1/(1/(self.pvar*self.dt) + 1/self.mvar)
+
+        x1next = np.random.normal(x[0],np.sqrt(self.gibbs_var))
+        xp[0] = x1next
+        num = self.px(xp, y, x0, betas, theta_2)
+        dem = self.px(x, y, x0, betas, theta_2)
+        prob_keep = np.exp(num - dem)
+        if prob_keep > 1:
+            x[0] = xp[0]
+
         for i in range(1,len(x)): 
             mu_xi = ((1/(self.pvar*self.dt))*(x[i-1] + self.dt*(betas@self.calc_bmat([x[i-1]]).T).item()) + (1/self.mvar)*y[i])*sig
             # xnext = x[i] + np.random.normal(0,np.sqrt(self.gvar))
             xnext = st.norm(mu_xi, np.sqrt(sig)).rvs()
             # xnext = (np.random.normal(x[i-1],np.sqrt(self.pvar)) + np.random.normal(y[i],np.sqrt(self.mvar)))/2
             xp[i] = xnext
-            num=self.px(xp,y,x0,betas)
-            dem = self.px(x,y,x0,betas)
+            num=self.px(xp,y,x0,betas,theta_2)
+            dem = self.px(x,y,x0,betas, theta_2)
             prob_keep = np.exp(num - dem)
             # if i ==0:
                 # import pdb; pdb.set_trace()
@@ -147,7 +168,6 @@ class SplineLearnerPOE():
     def update_poe(self,f1, f2):
         beta_post = self.beta_poevar + 0.5*(f1-f2).T@(f1-f2)
         alpha_post = self.alpha + 1/2
-        import pdb; pdb.set_trace()
         return st.invgamma(alpha_post, beta_post).rvs()*np.eye(len(f1))
 
     def update_pvar(self,states, f1):
@@ -170,7 +190,8 @@ class SplineLearnerPOE():
         self.trace_beta=[]
         
         for i, y in enumerate(self.observations):
-            x0 = self.states[i][0]
+            x0 = np.random.normal(self.observations[i][0], np.sqrt(100))
+            
             x = np.random.normal(x0, 10, size=self.states[0].shape[0])
             f1 = np.random.normal(0, np.sqrt(self.theta_var), size=self.states[0].shape[0])
             f2 = np.random.normal(0, np.sqrt(self.theta_var), size=self.states[0].shape[0])
@@ -214,6 +235,8 @@ class SplineLearnerPOE():
                 if train_f1:
                     # self.pvar = 1
                     mu_theta_n, sig_theta = self.update_theta(x,f2)
+                    betas_plot = st.multivariate_normal(
+                        mu_theta_n.squeeze(), sig_theta).rvs(100)
                     betas = st.multivariate_normal(mu_theta_n.squeeze(), sig_theta).rvs()
                     if s > 0:
                         if sum(abs(mu_theta_n-mu_theta))>=.0001:
@@ -227,25 +250,22 @@ class SplineLearnerPOE():
                 if s % self.plot_iter == 0 and train_f1 and plot:
                     plt.figure()
                     plt.title('Observation ' + str(i) + ', Step ' + str(s))
-                    plt.plot(mu_theta,label = r'Inferred $\mu_{\theta_{1}}$')
-                    plt.plot(betas, label=r'Sampled $\theta_{1}$ from inferred $\mu_{\theta_{1}}$ and $\Sigma_{\theta_{1}}$')
-                    plt.plot(self.true_betas[i], label=r'True $\theta_{1}$')
+                    
+                    plt.plot(range(len(betas)), betas, color='0.75', linewidth=1,
+                             label=r'Sampled $\theta_{1}$ from inferred $\mu_{\theta_{1}}$ and $\Sigma_{\theta_{1}}$')
+                    plt.plot(range(len(betas)),betas_plot.T, color = '0.75', linewidth = 1)
+                    plt.plot(self.true_betas[i], label=r'True $\theta_{1}$', color = 'g')
+                    plt.plot(
+                        mu_theta, label=r'Inferred $\mu_{\theta_{1}}$', color='r')
                     plt.xlabel(r'$\theta_{1}$ index')
                     plt.ylabel(r'$\theta_{1}$')
                     plt.legend()
                     plt.show()
 
-                # self.poe_var = 1*np.eye(len(self.states[0]))
-                # Update x based on theta 1
-
-                # f1_part = betas@self.calc_bmat(x[:-1]).T
                 if train_x:
-                    # if s < 20:
-                    #     self.pvar = 1e7
-                    xnew = self.update_x(x, y, x0, betas)
+                    xnew = self.update_x(x, y, x0, betas, theta2)
                     if sum(abs(x-xnew))>=.0001:
                         end_[-1] = False
-                        # import pdb; pdb.set_trace()
                     x = xnew
 
                 f1 = x + self.dt*(betas@self.calc_bmat(x).T)                
@@ -259,42 +279,55 @@ class SplineLearnerPOE():
                     plt.xlabel('Time (t)')
                     plt.ylabel('States (x)')
                     plt.legend()
+                    plt.savefig('imfolder/states_noise' + str(self.mvar) + '_step' + str(s) + 'obs' + str(i) + '.png')
+
                     plt.show()
                 # print('update x: ' + str(end2-start))
                 # Calculate f1 based on x and theta 1
 
+                # f1_plot = [x + self.dt*(betas_plot[kk,:]@self.calc_bmat(x).T) for kk in range(len(betas_plot))]
+                # f1_mean = x + self.dt*(mu_theta@self.calc_bmat(x).T)
                 if s % self.plot_iter == 0 and (train_f1 or train_x) and plot:
+
+                    xplot = self.plot_states[i]
+                    f1_plot = [xplot + (self.dt)*(betas_plot[kk, :]@self.calc_bmat(xplot).T)
+                               for kk in range(len(betas_plot))]
                     plt.figure()
                     plt.title('Observation ' + str(i) + ', Step ' + str(s))
-                    plt.plot(x, f1,label = r'Inferred $f_{1}$')
-                    plt.plot(self.states[i],self.states[i] + self.dt*(self.true_betas[i]@self.true_bmat2[i].T), label=r'True $f_{1}$')
+                    plt.plot(xplot, np.array(f1_plot).T,
+                             color='0.75', linewidth=1)
+                    plt.plot(xplot, xplot + (self.dt)*(betas@self.calc_bmat(
+                        xplot).T), label=r'Inferred $f_{1}$ Samples', color='0.75', linewidth=1)
+                    plt.plot(xplot, xplot + (self.dt)*(
+                        self.true_betas[i]@self.calc_bmat(xplot).T), label=r'True $f_{1}$')
+                    plt.plot(xplot, xplot + (self.dt)*(mu_theta@self.calc_bmat(
+                        xplot).T), label=r'Inferred $f_{1}$ Mean', color='r', linewidth=1)
                     # plt.plot(self.ys[i], label=r'True $f_{1}$')
-                    plt.xlabel('x (latent states)')
+                    plt.xlabel('True x (latent states)')
                     plt.ylabel(r'$f_{1}(x)$')
                     plt.legend()
+                    plt.savefig('imfolder/f1_noise' + str(self.mvar) +
+                                 '_step' + str(s) + 'obs' + str(i) + '.png')
                     plt.show()
-
-                    # plt.figure()
-                    # plt.title('Observation ' + str(i) + ', Step ' + str(s))
-                    # plt.plot((x[1:]-x[:-1])/self.dt, betas@self.calc_bmat(x[:-1]).T,label = r'Inferred $\theta_{1} B_{xin}$')
-                    # plt.plot((self.states[i][1:]-self.states[i][:-1])/self.dt, self.true_betas[i]
-                    #          @self.true_bmat1[i].T, label=r'True $\theta_{1} B_{xin}$')
-                    # # plt.plot(self.ys[i], label=r'True $f_{1}$')
-                    # plt.xlabel(r'$(x_{i+1}-x_{i})/\Delta t)$')
-                    # plt.ylabel(r'$\theta_{1} B_{xin}$')
-                    # plt.legend()
-                    # plt.show()
+                    
 
                     plt.figure()
                     plt.title('Observation ' + str(i) + ', Step ' + str(s))
-                    plt.plot(x[:-1],(betas@self.calc_bmat(x[:-1]).T), label=r'Inferred $\theta_{1} B_{xin}$')
-                    plt.plot(self.states[i][:-1],self.true_betas[i]@self.true_bmat1[i].T, label=r'True $\theta_{1} B_{xin}$')
+                    plt.plot(xplot[:-1], (betas_plot[0,:]@self.calc_bmat(xplot[:-1]).T),label=r'Inferred $\theta_{1} B_{xin}$ Samples', color = '0.75', linewidth = 1)
+                    for bet in range(1,betas_plot.shape[0]):
+                        plt.plot(xplot[:-1], (betas_plot[bet,:]@self.calc_bmat(xplot[:-1]).T),linewidth = 1, color = '0.75')
+                    plt.plot(xplot[:-1],(mu_theta@self.calc_bmat(xplot[:-1]).T), label=r'Inferred $\theta_{1} B_{xin}$ Mean', color = 'r')
+                    plt.plot(xplot[:-1], self.true_betas[i]@self.calc_bmat(
+                        xplot[:-1]).T, label=r'True $\theta_{1} B_{xin}$', color='g')
                     # plt.plot(self.true_betas[i]@self.true_bmat1[i].T, label=r'True $\theta_{1} B_{xin}$')
                     # plt.plot(self.ys[i], label=r'True $f_{1}$')
-                    plt.xlabel('x')
+                    plt.xlabel('True x')
                     plt.ylabel(r'$\theta_{1} B_{xin}$')
                     plt.legend()
+                    plt.savefig('imfolder/g1_noise' + str(self.mvar) +
+                                 '_step' + str(s) + 'obs' + str(i) + '.png')
                     plt.show()
+                    
 
                 end_bmat = time.time()
                 # print('make f1: ' + str(end_bmat-start))
@@ -312,35 +345,32 @@ class SplineLearnerPOE():
                 end3 = time.time()
                 # print('update theta 2: ' + str(end3-start))
                 if s % self.plot_iter == 0 and train_f2 and plot:
+
+                    xplot = self.plot_states[i]
                     plt.figure()
                     plt.title('Observation ' + str(i) + ', Step ' + str(s))
-                    plt.plot(x,f2,label = r'Inferred $f_{2}$')
-                    plt.plot(self.states[i],self.states[i] + self.dt*sigmoid(self.states[i],self.true_a,self.true_b), label=r'True $f_{2}$')
-                    plt.xlabel('x')
+                    plt.plot(xplot,xplot + (self.dt)*sigmoid(xplot, theta2[0],theta2[1]),label = r'Inferred $f_{2}$')
+                    plt.plot(xplot,xplot + (self.dt)*sigmoid(xplot,self.true_a,self.true_b), label=r'True $f_{2}$')
+                    plt.xlabel('True x')
                     plt.ylabel('$f_{2}$')
                     plt.legend()
+                    plt.savefig('imfolder/f2_noise' + str(self.mvar) +
+                                 '_step' + str(s) + 'obs' + str(i) + '.png')
                     plt.show()
-
-                    # plt.figure()
-                    # plt.title('Observation ' + str(i) + ', Step ' + str(s))
-                    # plt.plot((x[1:]-x[:-1])/self.dt, sigmoid(x[:-1],theta2[0],theta2[1]),
-                    #          label=r'Inferred')
-                    # plt.plot((self.states[i][1:]-self.states[i][:-1])/self.dt, sigmoid(
-                    #     self.states[i][:-1], self.true_a, self.true_b), label=r'True')
-                    # plt.xlabel(r'$(x_{i+1}-x_{i})/\Delta t)$')
-                    # plt.ylabel(r'$sigmoid(x_{i},\theta_{2})$')
-                    # plt.legend()
-                    # plt.show()
+                
 
                     plt.figure()
                     plt.title('Observation ' + str(i) + ', Step ' + str(s))
-                    plt.plot(x[:-1],sigmoid(x[:-1], theta2[0], theta2[1]),label=r'Inferred')
-                    plt.plot(self.states[i][:-1],sigmoid(self.states[i][:-1],self.true_a,self.true_b))
+                    plt.plot(xplot[:-1],sigmoid(xplot[:-1], theta2[0], theta2[1]),label=r'Inferred')
+                    plt.plot(xplot[:-1],sigmoid(xplot[:-1],self.true_a,self.true_b), label = 'True')
                     # plt.plot(sigmoid(self.states[i][:-1], self.true_a, self.true_b), label=r'True')
-                    plt.xlabel('x')
+                    plt.xlabel('True x')
                     plt.ylabel(r'$sigmoid(x_{i},\theta_{2})$')
                     plt.legend()
+                    plt.savefig('imfolder/g2_noise' + str(self.mvar) +
+                                 '_step' + str(s) + 'obs' + str(i) + '.png')
                     plt.show()
+                    
                     print(theta2)
                 if s % self.plot_iter == 0 and train_var:
                     print('Step ' + str(s))
@@ -359,8 +389,7 @@ class SplineLearnerPOE():
                 xxvec.append(x)
                 f2vec.append(f2)
                 end = time.time()
-                # print(str(s) + ' gibbs loop: ' + str(end-start))
-                # print('step ' + str(s))
+
                 if len(end_)>50:
                     if all(end_[-50:]) == True:
                         print('Converged')
