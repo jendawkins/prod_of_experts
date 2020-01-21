@@ -91,5 +91,4 @@ for m in use_mm:
         f = open(fname,'w')
         f.write(my_str.format(m,mn,outdir,outdir))
         f.close()
-        import pdb; pdb.set_trace()
         os.system('bsub < {}'.format(fname))
