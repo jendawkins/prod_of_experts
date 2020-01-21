@@ -84,12 +84,12 @@ basepath = 'outdir'
 for m in use_mm:
 
     for mn in measurement_noises:
-        outdir = 'outdir_mvar' + str(mn).replace('.', ',') + '_MM' + str(m)
+        outdir = 'outdir_mvar' + str(mn).replace('.', '') + '_MM' + str(m)
 
         fname = outdir + '.lsf'
 
         f = open(fname,'w')
         f.write(my_str.format(m,mn,outdir,outdir))
         f.close()
-
+        import pdb; pdb.set_trace()
         os.system('bsub < {}'.format(fname))
