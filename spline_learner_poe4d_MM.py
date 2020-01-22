@@ -2,7 +2,6 @@ from helper import *
 import numpy as np
 import scipy.stats as st
 import matplotlib.pyplot as plt
-import itertools
 import os
 from datetime import datetime
 
