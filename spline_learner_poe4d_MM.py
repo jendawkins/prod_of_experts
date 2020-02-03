@@ -4,6 +4,7 @@ import scipy.stats as st
 import matplotlib.pyplot as plt
 import os
 from datetime import datetime
+import pickle
 
 class SplineLearnerPOE_4D():
     def __init__(self, use_mm = 1, a = 1, b = 0.5, num_bact=3, MEAS_VAR=.01, PROC_VAR=1, THETA_VAR=1, AVAR=1, BVAR=1, POE_VAR=1, NSAMPS=2, NPTSPERSAMP=5,DT=.01,outdir =  'outdir'):
@@ -231,7 +232,10 @@ class SplineLearnerPOE_4D():
             mu_xi = (np.linalg.inv(pvar1*self.dt)@(x[i-1, :] + self.dt *(x[i-1, :]*self.gr[ob] + betas@self.calc_bmat(mx).T)) + (np.linalg.inv(mvar1)@y[i]))@sig1
 
             # xnext = x[i] + np.random.normal(0,np.sqrt(self.gvar))
-            xnext = st.multivariate_normal(mu_xi, sig1).rvs()
+            try:
+                xnext = st.multivariate_normal(mu_xi, sig1).rvs()
+            except:
+                import pdb; pdb.set_trace()
             # xnext = (np.random.normal(x[i-1],np.sqrt(self.pvar)) + np.random.normal(y[i],np.sqrt(self.mvar)))/2
             xp[i,:] = xnext
             
@@ -316,7 +320,7 @@ class SplineLearnerPOE_4D():
         f2 = np.expand_dims(f2,0)
         beta_post = self.beta_poevar + 0.5*(f1-f2).T@(f1-f2)
         alpha_post = self.alpha + 1/2
-        return st.invgamma(alpha_post, beta_post).rvs()*np.eye(len(f1))
+        return st.invgamma(alpha_post, beta_post).rvs()*np.eye(len(f1.squeeze()))
 
     def update_pvar(self,states, f1):
 
@@ -324,7 +328,7 @@ class SplineLearnerPOE_4D():
         states = np.expand_dims(states.flatten(order = 'F'),0)
         beta_post = self.beta_pvar + 0.5*(states-f1).T@(states-f1)
         alpha_post = self.alpha + 1/2
-        return st.invgamma(alpha_post, beta_post).rvs()
+        return st.invgamma(alpha_post, beta_post).rvs()*np.eye(len(f1.squeeze()))
 
     def update_mvar(self, states, obs):
         beta_m_post = self.beta_mvar + 0.5*(obs - states).T@(obs - states)
@@ -377,7 +381,6 @@ class SplineLearnerPOE_4D():
                     if s % self.plot_iter == 0 and plot:
                         if s == 0:
                             xold = x
-                        print('observation ' + str(i))
                         plot_states(self.outdir, xnew, self.states[:, :, i], self.observations[:, :, i],
                                     xold, proposed_xnew)
                         xold = xnew
@@ -424,11 +427,6 @@ class SplineLearnerPOE_4D():
                     (self.gr[i]*xplot + michaelis_menten(xplot, theta2[0], theta2[1],self.use_mm))
 
                 f2 = f2.flatten(order='F')
-                if s % self.plot_iter == 0 and train_var:
-                    print('Step ' + str(s))
-                    print('Meas Var:' + str(np.mean(self.mvar)))
-                    print('Proc Var:' + str(np.mean(self.pvar)))
-                    print('POE Var:' + str(np.mean(self.poe_var)))
                 if train_var:
                     self.pvar = self.update_pvar(x[1:,:], f1)
                     self.poe_var = self.update_poe(f1, f2)
@@ -446,10 +444,10 @@ class SplineLearnerPOE_4D():
             self.trace_f1.append(self.f1vec)
             self.trace_f2.append(self.f2vec)
             self.trace_beta.append(self.betavec)
-            print('Step ' + str(s) + ' Complete')
 
             if s % 100 == 0:
-                with open(outdir + '_data_' + str(s), 'wb') as f:
+                print('Step ' + str(s) + ' Complete')
+                with open(self.outdir + '_data_' + str(s), 'wb') as f:
                     pickle.dump([self.trace_a, self.trace_b, self.trace_x, self.trace_f1,\
                         self.trace_f2, self.trace_beta], f)
 

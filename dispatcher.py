@@ -68,7 +68,7 @@ module load anaconda/default
 source activate dispatcher
 
 cd /PHShome/jjd65/prod_of_experts/
-python3 ./main.py -MM {0} -a 1 -b 0.5 -nb 3 -mv {1} -pv 1 -tv 1 -bv 1 -av 1 -poe 1 -no 2 -ns 500 -dt 0.01 -o {2}
+python3 ./main.py -MM {0} -a 1 -b 0.5 -nb 3 -mv {1} -pv 1 -tv 1 -bv 1 -av 1 -poe 1 -no 2 -ns 50 -dt 0.01 -o {2}
 '''
 
 # Make the directories to store the information
