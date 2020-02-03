@@ -1,0 +1,173 @@
+Sender: LSF System <lsfadmin@ib047>
+Subject: Job 608522: <pylab> Exited
+
+Job <pylab> was submitted from host <eris1n3> by user <jjd65> in cluster <cmucluster>.
+Job was executed on host(s) <8*ib047>, in queue <big-multi>, as user <jjd65> in cluster <cmucluster>.
+</PHShome/jjd65> was used as the home directory.
+</PHShome/jjd65/prod_of_experts> was used as the working directory.
+Started at Sun Feb  2 21:58:45 2020
+Results reported at Mon Feb  3 13:04:58 2020
+
+Your job looked like:
+
+------------------------------------------------------------
+# LSBATCH: User input
+
+#!/bin/bash
+#BSUB -J pylab
+#BSUB -o outdir_mvar01_MM0.out
+#BSUB -e outdir_mvar01_MM0.err
+
+# This is a sample script with specific resource requirements for the
+# **bigmemory** queue with 64GB memory requirement and memory
+# limit settings, which are both needed for reservations of
+# more than 40GB.
+# Copy this script and then submit job as follows:
+# ---
+# cd ~/lsf
+# cp templates/bsub/example_8CPU_bigmulti_64GB.lsf .
+# bsub < example_bigmulti_8CPU_64GB.lsf
+# ---
+# Then look in the ~/lsf/output folder for the script log
+# that matches the job ID number
+
+# Please make a copy of this script for your own modifications
+
+#BSUB -q big-multi
+#BSUB -n 8
+#BSUB -M 10000
+#BSUB -R rusage[mem=10000]
+
+# Some important variables to check (Can be removed later)
+echo '---PROCESS RESOURCE LIMITS---'
+ulimit -a
+echo '---SHARED LIBRARY PATH---'
+echo $LD_LIBRARY_PATH
+echo '---APPLICATION SEARCH PATH:---'
+echo $PATH
+echo '---LSF Parameters:---'
+printenv | grep '^LSF'
+echo '---LSB Parameters:---'
+printenv | grep '^LSB'
+echo '---LOADED MODULES:---'
+module list
+echo '---SHELL:---'
+echo $SHELL
+echo '---HOSTNAME:---'
+hostname
+echo '---GROUP MEMBERSHIP (files are created in the first group listed):---'
+groups
+echo '---DEFAULT FILE PERMISSIONS (UMASK):---'
+umask
+echo '---CURRENT WORKING DIRECTORY:---'
+pwd
+echo '---DISK SPACE QUOTA---'
+
+(... more ...)
+------------------------------------------------------------
+
+TERM_OWNER: job killed by owner.
+Exited with exit code 143.
+
+Resource usage summary:
+
+    CPU time   : 342633.00 sec.
+    Max Memory :      5497 MB
+    Max Swap   :      6570 MB
+
+    Max Processes  :         4
+    Max Threads    :        20
+
+The output (if any) follows:
+
+---PROCESS RESOURCE LIMITS---
+core file size          (blocks, -c) 0
+data seg size           (kbytes, -d) unlimited
+scheduling priority             (-e) 0
+file size               (blocks, -f) unlimited
+pending signals                 (-i) 515975
+max locked memory       (kbytes, -l) 64
+max memory size         (kbytes, -m) 10240000
+open files                      (-n) 8192
+pipe size            (512 bytes, -p) 8
+POSIX message queues     (bytes, -q) 819200
+real-time priority              (-r) 0
+stack size              (kbytes, -s) unlimited
+cpu time               (seconds, -t) unlimited
+max user processes              (-u) 515975
+virtual memory          (kbytes, -v) 132120576
+file locks                      (-x) unlimited
+---SHARED LIBRARY PATH---
+/hptc_cluster/lsf/8.0/linux2.6-glibc2.3-x86_64/lib:/lib64:/usr/lib64:/lib:/usr/lib
+---APPLICATION SEARCH PATH:---
+/hptc_cluster/lsf/8.0/linux2.6-glibc2.3-x86_64/bin:/PHShome/jjd65/.conda/envs/dispatcher/bin:/apps/lib/anaconda2/bin:/usr/lib64/qt-3.3/bin:/PHShome/jjd65/perl5/bin:/hptc_cluster/lsf/8.0/linux2.6-glibc2.3-x86_64/etc:/usr/local/bin:/bin:/usr/bin:/usr/local/sbin:/usr/sbin:/sbin:/opt/ibutils/bin:/opt/puppetlabs/bin:/PHShome/jjd65/bin
+---LSF Parameters:---
+LSF_EAUTH_AUX_PASS=yes
+LSF_LOGDIR=/var/log/lsf
+LSF_LIM_API_NTRIES=1
+LSF_SERVERDIR=/hptc_cluster/lsf/8.0/linux2.6-glibc2.3-x86_64/etc
+LSF_LIBDIR=/hptc_cluster/lsf/8.0/linux2.6-glibc2.3-x86_64/lib
+LSF_INVOKE_CMD=bsub
+LSF_EAUTH_SERVER=mbatchd@cmucluster
+LSF_VERSION=24
+LSF_EAUTH_CLIENT=user
+LSF_BINDIR=/hptc_cluster/lsf/8.0/linux2.6-glibc2.3-x86_64/bin
+LSFUSER=jjd65
+LSF_ENVDIR=/hptc_cluster/lsf/conf
+---LSB Parameters:---
+LSB_EXEC_CLUSTER=cmucluster
+LSB_BATCH_JID=608522
+LSB_TRAPSIGS=trap # 15 10 12 2 1
+LSB_ERRORFILE=outdir_mvar01_MM0.err
+LSB_JOBRES_CALLBACK=35156@ib047
+LSB_JOBID=608522
+LSB_JOB_EXECUSER=jjd65
+LSB_JOBRES_PID=6965
+LSB_JOBNAME=pylab
+LSB_EEXEC_REAL_UID=
+LSB_UNIXGROUP_INT=cctm
+LSB_HOSTS=ib047 ib047 ib047 ib047 ib047 ib047 ib047 ib047
+LSB_DJOB_RU_INTERVAL=60
+LSB_JOBFILENAME=/PHShome/jjd65/.lsbatch/1580698715.608522
+LSB_DJOB_HB_INTERVAL=60
+LSB_JOBINDEX=0
+LSB_EXIT_PRE_ABORT=99
+LSB_JOBEXIT_STAT=0
+LSB_CHKFILENAME=/PHShome/jjd65/.lsbatch/1580698715.608522
+LSB_DJOB_HOSTFILE=/PHShome/jjd65/.lsbatch/1580698715.608522.hostfile
+LSB_DJOB_NUMPROC=8
+LSB_ACCT_FILE=/tmp/608522.tmpdir/.1580698715.608522.acct
+LSB_SUB_HOST=eris1n3
+LSB_OUTPUTFILE=outdir_mvar01_MM0.out
+LSB_MCPU_HOSTS=ib047 8 
+LSB_QUEUE=big-multi
+LSB_ECHKPNT_RSH_CMD=ssh
+LSB_CHUNK_MEMBER=16
+LSB_EEXEC_REAL_GID=
+---LOADED MODULES:---
+---SHELL:---
+/bin/bash
+---HOSTNAME:---
+ib047.research.partners.org
+---GROUP MEMBERSHIP (files are created in the first group listed):---
+cctm fuse bwhpath erisone jjd65
+---DEFAULT FILE PERMISSIONS (UMASK):---
+0007
+---CURRENT WORKING DIRECTORY:---
+/PHShome/jjd65/prod_of_experts
+---DISK SPACE QUOTA---
+Filesystem            1K-blocks  Used  Available Use% Mounted on
+panfs://10.129.85.126/hpc
+                     1953124992 17664 1953107328   1% /mnt/panfs
+---TEMPORARY SCRATCH FOLDER ($TMPDIR):---
+/tmp/608522.tmpdir
+Step 0 Complete
+Step 100 Complete
+Step 200 Complete
+Step 300 Complete
+
+
+PS:
+
+Read file <outdir_mvar01_MM0.err> for stderr output of this job.
+

@@ -1,0 +1,32 @@
+Currently Loaded Modulefiles:
+  1) anaconda/default
+/PHShome/jjd65/prod_of_experts/spline_learner_poe4d_MM.py:213: RuntimeWarning: overflow encountered in exp
+  prob_keep = np.exp(np.sum(num,0) - np.sum(dem,0))
+/PHShome/jjd65/prod_of_experts/spline_learner_poe4d_MM.py:242: RuntimeWarning: overflow encountered in exp
+  prob_keep = np.exp(np.sum(num, 0) - np.sum(dem, 0))
+/PHShome/jjd65/prod_of_experts/helper.py:257: RuntimeWarning: More than 20 figures have been opened. Figures created through the pyplot interface (`matplotlib.pyplot.figure`) are retained until explicitly closed and may consume too much memory. (To control this warning, see the rcParam `figure.max_open_warning`).
+  num_bugs, figsize=(15, 15))
+/PHShome/jjd65/prod_of_experts/helper.py:274: RuntimeWarning: More than 20 figures have been opened. Figures created through the pyplot interface (`matplotlib.pyplot.figure`) are retained until explicitly closed and may consume too much memory. (To control this warning, see the rcParam `figure.max_open_warning`).
+  num_bugs, figsize=(15, 15))
+/PHShome/jjd65/prod_of_experts/helper.py:158: RuntimeWarning: More than 20 figures have been opened. Figures created through the pyplot interface (`matplotlib.pyplot.figure`) are retained until explicitly closed and may consume too much memory. (To control this warning, see the rcParam `figure.max_open_warning`).
+  num_bugs, 1, sharex=True, figsize=(15, 15))
+/PHShome/jjd65/prod_of_experts/helper.py:206: RuntimeWarning: More than 20 figures have been opened. Figures created through the pyplot interface (`matplotlib.pyplot.figure`) are retained until explicitly closed and may consume too much memory. (To control this warning, see the rcParam `figure.max_open_warning`).
+  num_bugs, figsize=(15, 15))
+/PHShome/jjd65/prod_of_experts/helper.py:221: RuntimeWarning: More than 20 figures have been opened. Figures created through the pyplot interface (`matplotlib.pyplot.figure`) are retained until explicitly closed and may consume too much memory. (To control this warning, see the rcParam `figure.max_open_warning`).
+  num_bugs, figsize=(15, 15))
+Traceback (most recent call last):
+  File "./main.py", line 44, in <module>
+    main()
+  File "./main.py", line 41, in main
+    spl.run(gibbs_steps=500)
+  File "/PHShome/jjd65/prod_of_experts/spline_learner_poe4d_MM.py", line 384, in run
+    xnew,proposed_xnew = self.update_x(x, y, x0, betas, theta2,i)
+  File "/PHShome/jjd65/prod_of_experts/spline_learner_poe4d_MM.py", line 240, in update_x
+    num1,num = self.px(xp, y, x0, betas, theta_2, ob)
+  File "/PHShome/jjd65/prod_of_experts/spline_learner_poe4d_MM.py", line 188, in px
+    part3 = -0.5*((y-x).T@(np.linalg.inv(self.mvar))@(y-x))
+  File "<__array_function__ internals>", line 6, in inv
+  File "/PHShome/jjd65/.conda/envs/dispatcher/lib/python3.7/site-packages/numpy/linalg/linalg.py", line 547, in inv
+    ainv = _umath_linalg.inv(a, signature=signature, extobj=extobj)
+KeyboardInterrupt
+Terminated
