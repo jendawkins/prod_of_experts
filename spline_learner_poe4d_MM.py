@@ -14,9 +14,7 @@ class SplineLearnerPOE_4D():
         if not os.path.exists(outdir):
             os.mkdir(outdir)
 
-        now = datetime.now()
-        date_time = now.strftime("%m-%d-%Y_%H-%M-%S")
-        self.outdir = outdir + '/' + date_time
+        self.odir = outdir
 
         self.true_a = a*np.ones((num_bact,num_bact))
         np.fill_diagonal(self.true_a, -3*np.diag(self.true_a))
@@ -355,6 +353,11 @@ class SplineLearnerPOE_4D():
                   np.random.normal(0, self.bvar, size=(self.num_bugs, self.num_bugs))]
         if not self.use_mm:
                 theta2[1] = np.ones(theta2[1].shape)
+        
+        now = datetime.now()
+        date_time = now.strftime("%m-%d-%Y_%H-%M-%S")
+        self.outdir = self.odir + '/' + date_time
+
         if plot:
             plot_orig(self.outdir, self.states, self.observations)
 
@@ -367,7 +370,10 @@ class SplineLearnerPOE_4D():
             self.bvec=[]
             self.f1vec=[]
             for i in range(self.observations.shape[-1]):
-                
+                now = datetime.now()
+                date_time = now.strftime("%m-%d-%Y_%H-%M-%S")
+                self.outdir = self.odir + '/' + date_time
+                        
                 y = self.observations[:, :, i]
                 x0 = np.random.normal(self.observations[0, :, i], np.sqrt(100))
                 x = np.random.normal(np.mean(self.observations[:, :, i], 0), 1, size=(
