@@ -7,7 +7,7 @@ from datetime import datetime
 import pickle
 
 class SplineLearnerPOE_4D():
-    def __init__(self, use_mm = 1, a = 1, b = 0.5, num_bact=3, MEAS_VAR=.01, PROC_VAR=1, THETA_VAR=1, AVAR=1, BVAR=1, POE_VAR=1, NSAMPS=2, NPTSPERSAMP=5,DT=.01,outdir =  'outdir'):
+    def __init__(self, use_mm = 1, a = 1, b = 0.1, num_bact=3, MEAS_VAR=.01, PROC_VAR=1, THETA_VAR=1, AVAR=1, BVAR=1, POE_VAR=1, NSAMPS=2, NPTSPERSAMP=7,DT=.01,outdir =  'outdir'):
         self.num_bugs = num_bact
         aval = a
 
@@ -30,7 +30,9 @@ class SplineLearnerPOE_4D():
         b2 = np.sum(self.true_b,1)
         np.random.seed(4)
         self.xin = [st.truncnorm(a2, b2).rvs(size=(1, num_bact)) for i in range(NSAMPS)]
-        self.gr = [-(self.true_a@xo.T).squeeze()/(b2 + xo.squeeze()) for xo in self.xin]
+
+        # self.gr = [-(self.true_a@xo.T).squeeze()/(b2 + xo.squeeze()) for xo in self.xin]
+        self.gr = .1*np.ones(NSAMPS)
 
         self.use_mm = use_mm
         self.mvar = MEAS_VAR
@@ -65,7 +67,8 @@ class SplineLearnerPOE_4D():
         self.mu_betas = np.mean(np.array([[[self.xin[n][0,i]*self.xin[n][0,j]*np.ones(self.num_knots)
                                    for i in range(self.num_bugs)] for j in range(self.num_bugs)] for n in range(self.num_mice)]),0)
 
-        self.knots = np.array([[np.linspace(min(self.X1[:,i]*self.X1[:,j]) + .01, max(self.X1[:,i]*self.X1[:,j])-.01, self.num_knots) for i in range(self.num_bugs)] for j in range(self.num_bugs)])
+        self.knots = np.array([[np.linspace(min(self.X1[:,i]*self.X1[:,j]) - .01, max(
+            self.X1[:,i]*self.X1[:,j])+.01, self.num_knots) for i in range(self.num_bugs)] for j in range(self.num_bugs)])
 
         self.poe_var = POE_VAR*np.eye(num_bact*(self.num_states-1))
         self.beta_poevar = self.poe_var / (self.alpha - 1)
@@ -85,6 +88,7 @@ class SplineLearnerPOE_4D():
         Y_est = np.concatenate([Y_est[i].flatten(order='F') for i in range(self.num_mice)],0)
         
         self.true_betas = np.linalg.lstsq(self.true_bmat1, Y_est,rcond=None)[0]
+        # import pdb; pdb.set_trace()
 
 
     def bsplines(self, xi, x, bug1, bug2, k=3):
@@ -100,6 +104,7 @@ class SplineLearnerPOE_4D():
                 else:
                     bmat[i, ki] = ((xi-self.knots[bug1, bug2][i])*bmat[i, ki-1])/(self.knots[bug1, bug2][i+ki+1-1]-self.knots[bug1, bug2][i]) + (
                         (self.knots[bug1, bug2][i+ki+1] - xi)*bmat[i+1, ki-1])/(self.knots[bug1, bug2][i+ki+1]-self.knots[bug1, bug2][i+1])
+                    # import pdb; pdb.set_trace()
         return bmat
 
     def calc_bmat(self,X,k=3):
@@ -204,7 +209,7 @@ class SplineLearnerPOE_4D():
         sig = np.linalg.inv(np.linalg.inv(self.pvar*self.dt) +  np.linalg.inv(mvar))
         # sig = 1/(1/(self.pvar*self.dt) + 1/self.mvar)
 
-        x1next = np.random.normal(x[0,:], np.sqrt(self.gibbs_var))
+        x1next = np.random.normal(y[0,:], np.sqrt(self.gibbs_var))
         xp[0,:] = x1next
 
         num1,num = self.px(xp, y, x0, betas, theta_2, ob)
@@ -389,6 +394,7 @@ class SplineLearnerPOE_4D():
                             xold = x
                         plot_states(self.outdir, xnew, self.states[:, :, i], self.observations[:, :, i],
                                     xold, proposed_xnew)
+                        plt.show()
                         xold = xnew
                 else:
                     x = self.states[:,:,i]
@@ -403,10 +409,10 @@ class SplineLearnerPOE_4D():
                     if s % self.plot_iter == 0 and plot:
                         plot_f1(self.outdir, xplot, bmat_plot, mu_theta, sig_theta, self.dt, self.gr[i], self.true_betas, self.true_bmat1[i*(
                             self.num_bugs*(self.num_states-1)):(i+1)*(self.num_bugs*(self.num_states-1)), :])
+                        plt.show()
                 else:
                     mu_theta = self.true_betas
                     betas = mu_theta
-
                 # Re-define f1
                 f1 = (x[:-1, :] + x[:-1, :]*self.dt *self.gr[i]).flatten(order='F') + self.dt*(betas@self.calc_bmat(x[:-1, :]).T)
                 
@@ -417,6 +423,7 @@ class SplineLearnerPOE_4D():
                         if s % self.plot_iter == 0 and plot:
                             plot_f2_linear(self.outdir,
                                 xplot, mu2, sig2, [self.true_a, self.true_b], self.use_mm, self.dt, self.gr[i])
+                            plt.show()
 
                         theta2 = [np.reshape(st.multivariate_normal(mu2, sig2).rvs(),(self.num_bugs, self.num_bugs),order ='F'),\
                             np.ones((self.num_bugs,self.num_bugs))]
@@ -426,6 +433,7 @@ class SplineLearnerPOE_4D():
                         if s % self.plot_iter == 0 and plot:
                             plot_f2(self.outdir, xplot, theta2, [
                                     self.true_a, self.true_b], self.use_mm, self.dt, self.gr[i])
+                            plt.show()
 
                 else:
                     theta2 = [self.true_a, self.true_b]
