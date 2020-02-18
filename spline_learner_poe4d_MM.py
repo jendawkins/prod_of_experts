@@ -18,12 +18,11 @@ class SplineLearnerPOE_4D():
                 amat = np.array([[-1, -1], [1, -1]])
                 self.num_bugs = 2
             elif a == 'competing3a':
-                a = np.array([[-1, 0, 1], [-1, -1, 0], [0, 1, -1]])
+                amat = np.array([[-1, 0, 1], [-1, -1, 0], [0, 1, -1]])
             elif a == 'competing3b':
-                a = np.array([[-1, -1, 0], [1, -1, 1], [1, 0, -1]])
+                amat = np.array([[-1, -1, 0], [1, -1, 1], [1, 0, -1]])
             else:
                 print('Provide valid option')
-                break
         else:
             amat = np.array(a)
 
@@ -101,7 +100,7 @@ class SplineLearnerPOE_4D():
         Y_est0 = [(self.states[1:, :, i]-self.states[:-1, :, i] - self.states[:-1, :, i]*self.dt*self.gr[i])/(self.dt) for i in range(self.num_mice)]
         Y_est = np.concatenate([Y_est0[i].flatten(order='F') for i in range(self.num_mice)],0)
         
-        self.true_betas = np.linalg.lstsq(self.true_bmat1, Y_est,rcond=None)[0]
+        # self.true_betas = np.linalg.lstsq(self.true_bmat1, Y_est,rcond=None)[0]
         # out = self.true_bmat1@self.true_betas
         # out2 = out[:21]
         # out2 = np.reshape(out2,(7,3),order='F')
@@ -460,11 +459,15 @@ class SplineLearnerPOE_4D():
                     if s % self.plot_iter == 0 and plot:
                         plot_f1(self.outdir, xplot, bmat_plot, mu_theta, sig_theta, self.dt, self.gr[i], self.states[:,:,i],i)
                         plt.show()
+                    
+                    f1 = (x[:-1, :] + x[:-1, :]*self.dt *self.gr[i]).flatten(order='F') + self.dt*(betas@self.calc_bmat(x[:-1, :]).T)
+
                 else:
-                    mu_theta = self.true_betas
-                    betas = mu_theta
+                    # mu_theta = self.true_betas
+                    # betas = mu_theta
+                    f1 = x[1:,:]
                 # Re-define f1
-                f1 = (x[:-1, :] + x[:-1, :]*self.dt *self.gr[i]).flatten(order='F') + self.dt*(betas@self.calc_bmat(x[:-1, :]).T)
+                # f1 = (x[:-1, :] + x[:-1, :]*self.dt *self.gr[i]).flatten(order='F') + self.dt*(betas@self.calc_bmat(x[:-1, :]).T)
                 
                 if train_f2:
                     # xin = x[:-1,:]
