@@ -231,16 +231,16 @@ class SplineLearnerPOE_4D():
         x1next = np.random.normal(y[0,:], np.sqrt(self.gibbs_var))
         xp[0,:] = x1next
 
-        # num = self.px(xp, y, x0, betas, theta_2, ob)
-        # dem = self.px(x, y, x0, betas, theta_2, ob)
+        num = self.px(xp, y, x0, betas, theta_2, ob)
+        dem = self.px(x, y, x0, betas, theta_2, ob)
 
-        # prob_keep = np.exp(np.sum(num,0) - np.sum(dem,0))
+        prob_keep = np.exp(np.sum(num,0) - np.sum(dem,0))
         # # idxs = np.where(prob_keep > 1)
         # # x[0,idxs] = xp[0,idxs]
 
-        # if prob_keep > 1:
-        #     x[0,:] = xp[0,:]
-        x[0, :] = xp[0, :]
+        if prob_keep > 1:
+            x[0,:] = xp[0,:]
+        # x[0, :] = xp[0, :]
 
         # import pdb; pdb.set_trace()
         proposed_x = np.zeros(x.shape)
@@ -260,17 +260,17 @@ class SplineLearnerPOE_4D():
             # xnext = (np.random.normal(x[i-1],np.sqrt(self.pvar)) + np.random.normal(y[i],np.sqrt(self.mvar)))/2
             xp[i,:] = xnext
             
-            # num = self.px(xp, y, x0, betas, theta_2, ob)
-            # dem= self.px(x, y, x0, betas, theta_2, ob)
-            # prob_keep = np.exp(np.sum(num, 0) - np.sum(dem, 0))
+            num = self.px(xp, y, x0, betas, theta_2, ob)
+            dem= self.px(x, y, x0, betas, theta_2, ob)
+            prob_keep = np.exp(np.sum(num, 0) - np.sum(dem, 0))
 
             # g1p, g2p, f1p, f2p, xyp = self.calc_func_vals(xp,betas,theta_2,ob)
             # g1, g2, f1, f2, xy = self.calc_func_vals(
             #     x, betas, theta_2, ob)
 
-            # if prob_keep > 1:
-            #     x[i,:] = xp[i,:]
-            x[i, :] = xp[i, :]
+            if prob_keep > 1:
+                x[i,:] = xp[i,:]
+            # x[i, :] = xp[i, :]
             # else:
                 # import pdb; pdb.set_trace()
             proposed_x[i, :] = xnext
