@@ -443,7 +443,7 @@ class SplineLearnerPOE_4D():
                         if s == 0:
                             xold = x
                         plot_states(self.outdir, xnew, self.states[:, :, i], self.observations[:, :, i],
-                                    xold, ob=i)
+                                    xold, ob=i, proposed_xnew = proposed_xnew)
                         plt.show()
                         xold = xnew
                 else:

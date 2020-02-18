@@ -86,7 +86,7 @@ basepath = 'outdir'
 for m in use_mm:
 
     for opt in options:
-        outdir = 'outdir_opt_' + opt + '_MM' + str(m)
+        outdir = 'outdir_new_opt_' + opt + '_MM' + str(m)
         print(outdir)
 
         fname = outdir + '.lsf'
