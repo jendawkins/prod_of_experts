@@ -68,7 +68,7 @@ module load anaconda/default
 source activate dispatcher
 
 cd /PHShome/jjd65/prod_of_experts/
-python3 ./main.py -MM {0} -a 1 -b 0.5 -nb 3 -mv {1} -pv 1 -tv 1 -bv 1 -av 1 -poe 1 -no 2 -ns 50 -dt 0.01 -o {2}
+python3 ./main.py -MM {0} -a {1} -b 0.5 -nb 3 -mv .01 -pv .1 -tv 1 -bv 1 -av 1 -poe 1 -no 2 -tm 10 -dt 0.1 -o {2}
 '''
 
 # Make the directories to store the information
@@ -79,17 +79,19 @@ python3 ./main.py -MM {0} -a 1 -b 0.5 -nb 3 -mv {1} -pv 1 -tv 1 -bv 1 -av 1 -poe
     # Remove the diinconsistent use of tabs and spaces in indentationrectory and then make one
 #    shutil.rmtree(basepath)
 #    os.mkdir(basepath)
+
+options = {'cooperation3','competing2','competing3a','competing3b'}
 basepath = 'outdir'
 
 for m in use_mm:
 
-    for mn in measurement_noises:
-        outdir = 'outdir_mvar' + str(mn).replace('.', '') + '_MM' + str(m)
+    for opt in options:
+        outdir = 'outdir_opt_' + opt + '_MM' + str(m)
         print(outdir)
 
         fname = outdir + '.lsf'
 
         f = open(fname,'w')
-        f.write(my_str.format(m,mn,outdir,outdir))
+        f.write(my_str.format(m,opt,outdir,outdir))
         f.close()
         os.system('bsub < {}'.format(fname))

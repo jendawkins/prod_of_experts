@@ -13,7 +13,7 @@ def main():
     parser.add_argument("-mv", "--mvar", help="meas var", type=float)
     parser.add_argument("-pv", "--pvar", help="proc var", type=float)
     parser.add_argument("-poe", "--poe_var", help="poe var", type=float)
-    parser.add_argument("-no", "--nsamps", help="number of sample", type=int)
+    parser.add_argument("-tm", "--time", help="total time", type=int)
     parser.add_argument("-ns", "--nstates",
                         help="number of states", type=int)
     parser.add_argument("-dt", "--delta_t", help="delta t", type=float)
@@ -36,7 +36,7 @@ def main():
     
     spl = SplineLearnerPOE_4D(use_mm=args.use_mm, a=args.aval, b=args.bval, num_bact=args.num_bact,
                         MEAS_VAR=args.mvar, PROC_VAR=args.pvar, THETA_VAR=args.theta_var, AVAR=args.avar,
-                        BVAR=args.bvar, POE_VAR=args.poe_var, NSAMPS=args.nsamps, NPTSPERSAMP=args.nstates,
+                        BVAR=args.bvar, POE_VAR=args.poe_var, NSAMPS=args.nsamps, TIME=args.time,
                         DT=args.delta_t,outdir = args.outdir)
     spl.run(gibbs_steps=500)
 
