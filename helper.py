@@ -157,7 +157,7 @@ def diag_mat(X):
     return out
 
 
-def plot_states(outdir,xnew, true_states, observations, xold  = None, proposed_xnew = None,ob = None):
+def plot_states(outdir,xnew, true_states, observations, xold  = None, proposed_xnew = None,ob = None, f2 = None):
     num_bugs = xnew.shape[1]
     fig, axes = plt.subplots(
         num_bugs, 1, sharex=True, figsize=(15, 15))
@@ -170,6 +170,8 @@ def plot_states(outdir,xnew, true_states, observations, xold  = None, proposed_x
         #     axes[bb].plot(xold[:, bb], label='Old Inferred states')
         if proposed_xnew is not None:
             axes[bb].plot(proposed_xnew[:, bb], label='Proposed Inferred states')
+        if f2 is not None:
+            axes[bb].plot(f2[:,bb], label = 'f2')
         if ob is not None:
             axes[bb].set_title('Bug ' + str(bb) + ', Observation ' + str(ob))
         else:
