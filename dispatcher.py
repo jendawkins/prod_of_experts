@@ -92,6 +92,6 @@ for m in use_mm:
         fname = outdir + '.lsf'
 
         f = open(fname,'w')
-        f.write(my_str.format(m,opt,outdir,outdir,1000))
+        f.write(my_str.format(m,opt,outdir,1000))
         f.close()
         os.system('bsub < {}'.format(fname))
