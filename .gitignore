@@ -3,3 +3,4 @@
 *.lsf
 *.err
 *.out
+outdir/

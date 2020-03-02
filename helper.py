@@ -16,6 +16,7 @@ def mm(x,y,a,b,dt,i):
 
 def michaelis_menten(x, a, b, ii):
     if ii == 0:
+        
         assert((b == np.ones(a.shape)).all())
     if len(x.shape) < 2:
         x = np.expand_dims(x,0)
@@ -42,7 +43,6 @@ def generate_data_MM(a, b, r, xinn, resolution, ii, mvar, pvar, nsamps, nptspers
         x_all = [xin]
         y_all = [xin + np.random.normal(0, np.sqrt(mvar))]
         for n in range(nptspersample):
-
             xout = xin + resolution*(xin*r[nn] + michaelis_menten(xin, a, b, ii)) 
             # pvar = pvar*abs(xout - xin)*10
             # pvar = 0

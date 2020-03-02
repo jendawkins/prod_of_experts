@@ -22,6 +22,8 @@ def main():
     parser.add_argument("-bv", "--bvar", help="b variance", type=float)
     parser.add_argument("-tv", "--theta_var",
                         help="theta variance", type=float)
+    parser.add_argument("-gstepps", "--gibbs_steps",
+                        help="number of steps", type=int)
     
     parser.add_argument("-o", "--outdir", help="out directory", type=str)
 
@@ -33,12 +35,15 @@ def main():
         sys.exit(0)
     elif not os.path.exists(curr  + '/' + args.outdir):
         os.mkdir(curr + '/' + args.outdir)
-    
-    spl = SplineLearnerPOE_4D(use_mm=args.use_mm, a=args.aval, b=args.bval, num_bact=args.num_bact,
-                        MEAS_VAR=args.mvar, PROC_VAR=args.pvar, THETA_VAR=args.theta_var, AVAR=args.avar,
-                        BVAR=args.bvar, POE_VAR=args.poe_var, NSAMPS=args.nobs, TIME=args.time,
-                        DT=args.delta_t,outdir = args.outdir)
-    spl.run(gibbs_steps=500)
+    # if args.use_mm and args.aval and args.bval and args.num_bact and args.mvar and args.pvar and args.theta_var and args.avar and args.bvar and args.poe_var and args.nobs and args.time and args.delta_t and args.outdir:
+    # spl = SplineLearnerPOE_4D(use_mm=args.use_mm, a=args.aval, b=args.bval, num_bact=args.num_bact,
+    #                     MEAS_VAR=args.mvar, PROC_VAR=args.pvar, THETA_VAR=args.theta_var, AVAR=args.avar,
+    #                     BVAR=args.bvar, POE_VAR=args.poe_var, NSAMPS=args.nobs, TIME=args.time,
+    #                     DT=args.delta_t,outdir = args.outdir)
+    # elif args.use_mm and args.aval and args.outdir:
+    spl = SplineLearnerPOE_4D(
+        use_mm=args.use_mm, a=args.aval, outdir=args.outdir)
+    spl.run(gibbs_steps=args.gibbs_steps)
 
 if __name__ == "__main__":
    main()

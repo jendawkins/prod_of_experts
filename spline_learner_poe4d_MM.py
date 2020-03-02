@@ -7,7 +7,7 @@ from datetime import datetime
 import pickle
 
 class SplineLearnerPOE_4D():
-    def __init__(self, use_mm=1, bypass_f1 = False, a='cooperation3', b=0.1, num_bact=3, MEAS_VAR=.01, PROC_VAR=.1, THETA_VAR=1, AVAR=1, BVAR=1, POE_VAR=1, NSAMPS=2, TIME=2, DT=.1, outdir='outdir'):
+    def __init__(self, use_mm=1, bypass_f1 = False, a='cooperation3', b=0.1, num_bact=3, MEAS_VAR=.01, PROC_VAR=.1, THETA_VAR=1, AVAR=1, BVAR=1, POE_VAR=1, NSAMPS=2, TIME=4, DT=.1, outdir='outdir'):
         NPTSPERSAMP = int(TIME/DT)
         self.time = TIME
         self.num_bugs = num_bact
@@ -36,14 +36,14 @@ class SplineLearnerPOE_4D():
         assert(self.num_bugs == self.true_a.shape[0])
         # self.gr = gr*np.ones(num_bact)
         if use_mm:
-            self.true_b = b*np.ones((num_bact, num_bact))
+            self.true_b = b*np.ones((self.num_bugs, self.num_bugs))
         else:
-            self.true_b = np.ones((num_bact, num_bact))
+            self.true_b = np.ones((self.num_bugs, self.num_bugs))
         a2 = 0
         b2 = np.sum(self.true_b,1)
         np.random.seed(4)
         # self.xin = [st.truncnorm(a2, b2).rvs(size=(1, num_bact)) for i in range(NSAMPS)]
-        self.xin = [np.array([[.1,.1,.1]]) for i in range(NSAMPS)]
+        self.xin = [np.array(np.ones((1,self.num_bugs))) for i in range(NSAMPS)]
 
         # self.gr = [-(self.true_a@xo.T).squeeze()/(b2 + xo.squeeze()) for xo in self.xin]
         self.gr = 1*np.ones(NSAMPS)
@@ -84,11 +84,11 @@ class SplineLearnerPOE_4D():
         self.knots = np.array([[np.linspace(min(self.X1[:,i]*self.X1[:,j]) - .01, max(
             self.X1[:,i]*self.X1[:,j])+.01, self.num_knots) for i in range(self.num_bugs)] for j in range(self.num_bugs)])
 
-        self.poe_var = POE_VAR*np.eye(num_bact*(self.num_states-1))
+        self.poe_var = POE_VAR*np.eye(self.num_bugs*(self.num_states-1))
         self.beta_poevar = self.poe_var / (self.alpha - 1)
 
-        self.pvar = self.pvar*np.eye(num_bact*(self.num_states-1))
-        self.mvar = self.mvar*np.eye(num_bact*(self.num_states))
+        self.pvar = self.pvar*np.eye(self.num_bugs*(self.num_states-1))
+        self.mvar = self.mvar*np.eye(self.num_bugs*(self.num_states))
 
         self.beta_mvar = self.mvar / (self.alpha - 1)
         self.beta_pvar = self.pvar / (self.alpha - 1)

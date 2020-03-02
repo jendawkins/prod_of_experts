@@ -5,7 +5,7 @@ import os
 import shutil
 import argparse
 
-measurement_noises = [0.01, 0.05, 0.1, 0.15]
+measurement_noises = [0.005, 0.01, 0.05, 0.1, 0.15]
 use_mm = [0,1]
 
 my_str = '''
@@ -68,7 +68,7 @@ module load anaconda/default
 source activate dispatcher
 
 cd /PHShome/jjd65/prod_of_experts/
-python3 ./main.py -MM {0} -a {1} -b 0.5 -nb 3 -mv .01 -pv .1 -tv 1 -bv 1 -av 1 -poe 1 -no 2 -tm 10 -dt 0.1 -o {2}
+python3 ./main.py -MM {0} -a {1} -o {2} -gstepps {3}
 '''
 
 # Make the directories to store the information
@@ -92,6 +92,6 @@ for m in use_mm:
         fname = outdir + '.lsf'
 
         f = open(fname,'w')
-        f.write(my_str.format(m,opt,outdir,outdir))
+        f.write(my_str.format(m,opt,outdir,outdir,1000))
         f.close()
         os.system('bsub < {}'.format(fname))
