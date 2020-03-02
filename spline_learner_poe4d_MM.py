@@ -12,6 +12,7 @@ class SplineLearnerPOE_4D():
         self.time = TIME
         self.num_bugs = num_bact
         self.bypass_f1 = bypass_f1
+        self.use_mm = use_mm
         if isinstance(a,str):
             if a == 'cooperation3':
                 amat = np.array([[-1, 0, 1], [1, -1, 1], [0, 1, -1]])
@@ -35,7 +36,7 @@ class SplineLearnerPOE_4D():
         self.true_a = amat
         assert(self.num_bugs == self.true_a.shape[0])
         # self.gr = gr*np.ones(num_bact)
-        if use_mm:
+        if self.use_mm:
             self.true_b = b*np.ones((self.num_bugs, self.num_bugs))
         else:
             self.true_b = np.ones((self.num_bugs, self.num_bugs))

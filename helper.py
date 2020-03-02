@@ -15,9 +15,6 @@ def mm(x,y,a,b,dt,i):
 
 
 def michaelis_menten(x, a, b, ii):
-    if ii == 0:
-        
-        assert((b == np.ones(a.shape)).all())
     if len(x.shape) < 2:
         x = np.expand_dims(x,0)
 #     ar = np.array([np.sum([a[i,j]*x[:,i]*x[:,j]/(b[i,j] + ii*x[:,i]*x[:,j]) for j in range(a.shape[0])],1) for i in range(a.shape[0])]).T
