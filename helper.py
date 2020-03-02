@@ -24,7 +24,7 @@ def michaelis_menten(x, a, b, ii):
 
     for k in range(out2.shape[-1]):
         np.fill_diagonal(out2[:, :, k], np.array(
-            [a[i, i]*(x[:, i]**2) for i in range(a.shape[0])]))
+            [a[i, i]*(x[k, i]**2) for i in range(a.shape[0])]))
     return np.sum(out2, 1).T
 
 def generate_data_MM(a, b, r, xinn, resolution, ii, mvar, pvar, nsamps, nptspersample, seed=4):
@@ -157,7 +157,7 @@ def diag_mat(X):
     return out
 
 
-def plot_states(outdir,xnew, true_states, observations, xold  = None, proposed_xnew = None,ob = None, f2 = None):
+def plot_states(outdir,xnew, true_states, observations, xold  = None, proposed_xnew = None,ob = None, f2 = None, f1 = None):
     num_bugs = xnew.shape[1]
     fig, axes = plt.subplots(
         num_bugs, 1, sharex=True, figsize=(15, 15))
@@ -172,6 +172,8 @@ def plot_states(outdir,xnew, true_states, observations, xold  = None, proposed_x
             axes[bb].plot(proposed_xnew[:, bb], label='Proposed Inferred states')
         if f2 is not None:
             axes[bb].plot(f2[:,bb], label = 'f2')
+        if f1 is not None:
+            axes[bb].plot(f1[:,bb], label = 'f2')
         if ob is not None:
             axes[bb].set_title('Bug ' + str(bb) + ', Observation ' + str(ob))
         else:
@@ -215,7 +217,7 @@ def plot_f1(outdir, xplot, bmat_plot, mu_theta, sig_theta, dt, gr, true_states,o
     # f1_true = xplot + dt*xplot*gr + dt*g1_true
 
     fig, axes = plt.subplots(1,
-        num_bugs, figsize=(15, 15))
+        num_bugs, figsize=(15, 5))
     for bb in range(num_bugs):
         for bp in range(len(f1_plot)):
             axes[bb].plot(xplot[:,bb],f1_plot[bp][:,bb], c = '0.75', linewidth = .5)
@@ -231,7 +233,7 @@ def plot_f1(outdir, xplot, bmat_plot, mu_theta, sig_theta, dt, gr, true_states,o
     plt.savefig(outdir + '_f1.png')
 
     fig, axes = plt.subplots(1,
-        num_bugs, figsize=(15, 15))
+        num_bugs, figsize=(15, 5))
     for bb in range(num_bugs):
         for bp in range(len(f1_plot)):
             axes[bb].plot(xplot[:, bb], g1_plot[bp]
@@ -253,7 +255,7 @@ def plot_f2_linear(outdir, xin, mu2, sig2, true_theta, use_mm, dt, gr,ob):
 
     num_bugs = xin.shape[1]
     g2_mean = michaelis_menten(
-        xplot, np.reshape(mu2, (num_bugs, num_bugs), order='C'), np.ones((num_bugs,num_bugs)), use_mm)
+        xplot, np.reshape(mu2, (num_bugs, num_bugs), order='F'), np.ones((num_bugs,num_bugs)), use_mm)
 
     theta2_all = st.multivariate_normal(mu2, sig2).rvs(100)
     theta2_all = [np.reshape(theta2_all[i,:],(num_bugs, num_bugs), order = 'C') for i in range(100)]
@@ -269,7 +271,7 @@ def plot_f2_linear(outdir, xin, mu2, sig2, true_theta, use_mm, dt, gr,ob):
     f2_true = xplot + dt*(gr*xplot + g2_true)
 
     fig, axes = plt.subplots(1,
-                            num_bugs, figsize=(15, 15))
+                            num_bugs, figsize=(15, 5))
     for bb in range(num_bugs):
         axes[bb].plot(xplot[:, bb], f2_mean[:, bb],
                         c='r', label=r'Inferred $f_{2}$')
@@ -287,7 +289,7 @@ def plot_f2_linear(outdir, xin, mu2, sig2, true_theta, use_mm, dt, gr,ob):
     plt.savefig(outdir + '_f2_linear.png')
 
     fig, axes = plt.subplots(1,
-                            num_bugs, figsize=(15, 15))
+                            num_bugs, figsize=(15, 5))
     for bb in range(num_bugs):
         for bp in range(len(f2_plot)):
             axes[bb].plot(xplot[:, bb], g2_plot[bp]
