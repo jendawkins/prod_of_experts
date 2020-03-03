@@ -27,6 +27,7 @@ def main():
                         help="number of steps", type=int)
     
     parser.add_argument("-o", "--outdir", help="out directory", type=str)
+    parser.add_argument("-useF1", "--useF1", help="use f1 or not", type=bool)
 
     args = parser.parse_args()
 
@@ -43,7 +44,7 @@ def main():
     #                     DT=args.delta_t,outdir = args.outdir)
     # elif args.use_mm and args.aval and args.outdir:
     spl = SplineLearnerPOE_4D(
-        use_mm=args.use_mm, a=args.aval, outdir=args.outdir)
+        use_mm=args.use_mm, a=args.aval, outdir=args.outdir, bypass_f1=args.useF1)
     with open(args.outdir + '_class', 'wb') as f:
         pickle.dump(spl, f)
     spl.run(gibbs_steps=args.gibbs_steps)

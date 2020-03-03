@@ -7,7 +7,7 @@ from datetime import datetime
 import pickle
 
 class SplineLearnerPOE_4D():
-    def __init__(self, use_mm=1, bypass_f1 = False, a='cooperation3', b=0.1, num_bact=3, MEAS_VAR=.01, PROC_VAR=.1, THETA_VAR=1, AVAR=1, BVAR=1, POE_VAR=1, NSAMPS=2, TIME=4, DT=.1, outdir='outdir'):
+    def __init__(self, use_mm=1, bypass_f1 = False, a='cooperation3', b=0.1, num_bact=3, MEAS_VAR=.1, PROC_VAR=.1, THETA_VAR=1, AVAR=1, BVAR=1, POE_VAR=1, NSAMPS=2, TIME=4, DT=.1, gr = 5, outdir='outdir'):
         NPTSPERSAMP = int(TIME/DT)
         self.time = TIME
         self.num_bugs = num_bact
@@ -47,7 +47,7 @@ class SplineLearnerPOE_4D():
         self.xin = [np.array(np.ones((1,self.num_bugs))) for i in range(NSAMPS)]
 
         # self.gr = [-(self.true_a@xo.T).squeeze()/(b2 + xo.squeeze()) for xo in self.xin]
-        self.gr = 1*np.ones(NSAMPS)
+        self.gr = gr*np.ones(NSAMPS)
 
         self.use_mm = use_mm
         self.mvar = MEAS_VAR
@@ -76,7 +76,7 @@ class SplineLearnerPOE_4D():
         # self.X = diag_block_mat(self.X1, len(self.Y))
         self.num_states = len(self.states[0])
         
-        self.num_knots = self.num_states-self.k 
+        self.num_knots = 2*(self.num_states-self.k)
 
         # Maybe redo this:
         self.mu_betas = np.mean(np.array([[[self.xin[n][0,i]*self.xin[n][0,j]*np.ones(self.num_knots)
@@ -366,20 +366,24 @@ class SplineLearnerPOE_4D():
             return mu_new, sig_new
 
         else:
-            anew = theta[0] + np.random.normal(0,self.avar/10, size = (self.num_bugs,self.num_bugs))
-            pold = self.px2(states,theta,f1, ob)
-            pnew = self.px2(states,[anew, theta[1]], f1, ob)
-            prob_keep = np.exp(pnew - pold)
-            if prob_keep > 1:
-                theta[0] = anew
-            bnew = theta[1] + \
-                np.random.normal(0, self.bvar/10, size=(self.num_bugs, self.num_bugs))
-            pold=self.px2(states, theta, f1, ob)
-            pnew=self.px2(states, [theta[0], bnew], f1, ob)
-            prob_keep = np.exp(pnew-pold)
+            for bi in range(self.num_bugs):
+                for bj in range(self.num_bugs):
+                    anew = theta[0]
+                    anew[bi,bj] = theta[0][bi,bj] + np.random.normal(0,self.avar/10)
+                    pold = self.px2(states,theta,f1, ob)
+                    pnew = self.px2(states,[anew, theta[1]], f1, ob)
+                    prob_keep = np.exp(pnew - pold)
+                    if prob_keep > 1:
+                        theta[0] = anew
+                    bnew = theta[1]
+                    bnew[bi,bj] = theta[1][bi,bj] + \
+                        np.random.normal(0, self.bvar/10)
+                    pold=self.px2(states, theta, f1, ob)
+                    pnew=self.px2(states, [theta[0], bnew], f1, ob)
+                    prob_keep = np.exp(pnew-pold)
 
-            if prob_keep > 1:
-                theta[1] = bnew
+                    if prob_keep > 1:
+                        theta[1] = bnew
             return theta
 
     def update_poe(self,f1, f2):
@@ -472,7 +476,7 @@ class SplineLearnerPOE_4D():
                         if s == 0:
                             xold = x
                         plot_states(self.outdir, xnew, self.states[:, :, i], self.observations[:, :, i],
-                                    xold, ob=i, proposed_xnew = proposed_xnew, f2 = np.reshape(f2,(self.states.shape[0]-1,self.num_bugs),order='F'),
+                                    xold, ob=i, f2 = np.reshape(f2,(self.states.shape[0]-1,self.num_bugs),order='F'),
                                     f1=np.reshape(f1, (self.states.shape[0]-1, self.num_bugs), order='F'))
                         plt.show()
 
@@ -589,7 +593,7 @@ class SplineLearnerPOE_4D():
                         axes1[bi,bj].plot(a1,label = 'A guess, Obs 1')
                         axes1[bi, bj].plot(a2, label='A guess, Obs 2')
                         axes1[bi, bj].plot(self.true_a[bi,bj]*np.ones(len(a1)), label='a true')
-                        axes1[bi,bj].set_ylim([self.true_a[bi,bj]-2,self.true_a[bi,bj]+2])
+                        # axes1[bi,bj].set_ylim([self.true_a[bi,bj]-2,self.true_a[bi,bj]+2])
                         axes1[bi, bj].legend()
 
                         if self.use_mm:
@@ -599,8 +603,8 @@ class SplineLearnerPOE_4D():
                             axes2[bi, bj].plot(b2, label='B guess, Obs 2')
                             axes2[bi, bj].plot(
                                 self.true_b[bi, bj]*np.ones(len(b1)), label='b true')
-                            axes2[bi, bj].set_ylim(
-                                [self.true_b[bi, bj]-1, self.true_b[bi, bj]+1])
+                            # axes2[bi, bj].set_ylim(
+                            #     [self.true_b[bi, bj]-1, self.true_b[bi, bj]+1])
 
                             axes2[bi, bj].legend()
                 fig1.show()

@@ -68,7 +68,7 @@ module load anaconda/default
 source activate dispatcher
 
 cd /PHShome/jjd65/prod_of_experts/
-python3 ./main.py -MM {0} -a {1} -o {2} -gstepps {3}
+python3 ./main.py -MM {0} -a {1} -o {2} -gstepps {3} -useF1 {4}
 '''
 
 # Make the directories to store the information
@@ -81,17 +81,18 @@ python3 ./main.py -MM {0} -a {1} -o {2} -gstepps {3}
 #    os.mkdir(basepath)
 
 options = {'cooperation3','competing2','competing3a','competing3b'}
+useF1 = {True, False}
 basepath = 'outdir'
 
 for m in use_mm:
+    for uf1 in useF1:
+        for opt in options:
+            outdir = 'outdir_new_opt_' + opt + '_MM' + str(m) + '_useF1_' + str(uf1)
+            print(outdir)
 
-    for opt in options:
-        outdir = 'outdir_new_opt_' + opt + '_MM' + str(m)
-        print(outdir)
+            fname = outdir + '.lsf'
 
-        fname = outdir + '.lsf'
-
-        f = open(fname,'w')
-        f.write(my_str.format(m,opt,outdir,1000))
-        f.close()
-        os.system('bsub < {}'.format(fname))
+            f = open(fname,'w')
+            f.write(my_str.format(m,opt,outdir,1000,uf1))
+            f.close()
+            os.system('bsub < {}'.format(fname))

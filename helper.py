@@ -170,7 +170,7 @@ def plot_states(outdir,xnew, true_states, observations, xold  = None, proposed_x
         if f2 is not None:
             axes[bb].plot(f2[:,bb], label = 'f2')
         if f1 is not None:
-            axes[bb].plot(f1[:,bb], label = 'f2')
+            axes[bb].plot(f1[:,bb], label = 'f1')
         if ob is not None:
             axes[bb].set_title('Bug ' + str(bb) + ', Observation ' + str(ob))
         else:
