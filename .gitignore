@@ -1,2 +1,7 @@
 *.xlsx
 *.lsf
+*.png
+*.lsf
+*.err
+*.out
+outdir/
