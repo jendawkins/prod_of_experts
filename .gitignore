@@ -4,3 +4,4 @@
 *.err
 *.out
 outdir/
+no_f1_mvar01_useMM_outdir/
