@@ -3,6 +3,7 @@ import sys, getopt
 import argparse
 import os
 import sys
+import pickle
 
 def main():
     parser = argparse.ArgumentParser()
@@ -43,6 +44,8 @@ def main():
     # elif args.use_mm and args.aval and args.outdir:
     spl = SplineLearnerPOE_4D(
         use_mm=args.use_mm, a=args.aval, outdir=args.outdir)
+    with open(args.outdir + '_class', 'wb') as f:
+        pickle.dump(spl, f)
     spl.run(gibbs_steps=args.gibbs_steps)
 
 if __name__ == "__main__":
