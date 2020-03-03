@@ -368,21 +368,21 @@ class SplineLearnerPOE_4D():
         else:
             for bi in range(self.num_bugs):
                 for bj in range(self.num_bugs):
-                    anew = theta[0]
-                    anew[bi,bj] = theta[0][bi,bj] + np.random.normal(0,self.avar/10)
+                    anew = theta[0].copy()
+                    anew[bi,bj] = theta[0][bi,bj] + np.random.normal(0,self.avar)
                     pold = self.px2(states,theta,f1, ob)
                     pnew = self.px2(states,[anew, theta[1]], f1, ob)
                     prob_keep = np.exp(pnew - pold)
-                    if prob_keep > 1:
+                    if prob_keep >= 1:
                         theta[0] = anew
-                    bnew = theta[1]
+                    bnew = theta[1].copy()
                     bnew[bi,bj] = theta[1][bi,bj] + \
-                        np.random.normal(0, self.bvar/10)
+                        np.random.normal(0, self.bvar)
                     pold=self.px2(states, theta, f1, ob)
                     pnew=self.px2(states, [theta[0], bnew], f1, ob)
                     prob_keep = np.exp(pnew-pold)
 
-                    if prob_keep > 1:
+                    if prob_keep >= 1:
                         theta[1] = bnew
             return theta
 
@@ -475,9 +475,14 @@ class SplineLearnerPOE_4D():
                     if s % self.plot_iter == 0 and plot:
                         if s == 0:
                             xold = x
-                        plot_states(self.outdir, xnew, self.states[:, :, i], self.observations[:, :, i],
-                                    xold, ob=i, f2 = np.reshape(f2,(self.states.shape[0]-1,self.num_bugs),order='F'),
-                                    f1=np.reshape(f1, (self.states.shape[0]-1, self.num_bugs), order='F'))
+                        if self.bypass_f1:
+                            plot_states(self.outdir, xnew, self.states[:, :, i], self.observations[:, :, i],
+                                        xold, ob=i, f2=np.reshape(
+                                            f2, (self.states.shape[0]-1, self.num_bugs), order='F'))
+                        else:
+                            plot_states(self.outdir, xnew, self.states[:, :, i], self.observations[:, :, i],
+                                        xold, ob=i, f2 = np.reshape(f2,(self.states.shape[0]-1,self.num_bugs),order='F'),
+                                        f1=np.reshape(f1, (self.states.shape[0]-1, self.num_bugs), order='F'))
                         plt.show()
 
                         xold = xnew
