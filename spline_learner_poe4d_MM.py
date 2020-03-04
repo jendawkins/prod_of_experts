@@ -76,7 +76,7 @@ class SplineLearnerPOE_4D():
         # self.X = diag_block_mat(self.X1, len(self.Y))
         self.num_states = len(self.states[0])
         
-        self.num_knots = 2*(self.num_states-self.k)
+        self.num_knots = int((self.num_states-self.k)/2)
 
         # Maybe redo this:
         self.mu_betas = np.mean(np.array([[[self.xin[n][0,i]*self.xin[n][0,j]*np.ones(self.num_knots)
@@ -341,9 +341,11 @@ class SplineLearnerPOE_4D():
         b=theta[1]
         part1=-.5*(michaelis_menten(xin, a, b,self.use_mm).flatten(order = 'F')-f1a).T@np.linalg.inv(
             self.poe_var)@(michaelis_menten(xin, a, b, self.use_mm).flatten(order='F')-f1a)
-
-        part2 = 0
-        return part1 + part2
+        mu_a = np.zeros(a.shape)
+        mu_b = 0.5*np.ones(a.shape)
+        part2 = -.5*(np.sum((mu_a - a)**2)).flatten(order = 'F')/self.avar
+        part3 = -.5*(np.sum((mu_b - b)**2)).flatten(order='F')/self.bvar
+        return part1 + part2 + part3
 
     def update_f2(self,states,theta,f1, ob):
         if not self.use_mm:
@@ -598,7 +600,7 @@ class SplineLearnerPOE_4D():
                         axes1[bi,bj].plot(a1,label = 'A guess, Obs 1')
                         axes1[bi, bj].plot(a2, label='A guess, Obs 2')
                         axes1[bi, bj].plot(self.true_a[bi,bj]*np.ones(len(a1)), label='a true')
-                        # axes1[bi,bj].set_ylim([self.true_a[bi,bj]-2,self.true_a[bi,bj]+2])
+                        axes1[bi,bj].set_ylim([self.true_a[bi,bj]-4,self.true_a[bi,bj]+4])
                         axes1[bi, bj].legend()
 
                         if self.use_mm:
@@ -608,12 +610,15 @@ class SplineLearnerPOE_4D():
                             axes2[bi, bj].plot(b2, label='B guess, Obs 2')
                             axes2[bi, bj].plot(
                                 self.true_b[bi, bj]*np.ones(len(b1)), label='b true')
-                            # axes2[bi, bj].set_ylim(
-                            #     [self.true_b[bi, bj]-1, self.true_b[bi, bj]+1])
+                            axes2[bi, bj].set_ylim(
+                                [self.true_b[bi, bj]-2, self.true_b[bi, bj]+2])
 
                             axes2[bi, bj].legend()
+
+                fig1.savefig(self.outdir + '_trace_a.png')
                 fig1.show()
                 if self.use_mm:
+                    fig2.savefig(self.outdir + '_trace_b.png')
                     fig2.show()
                 
                 print('Step ' + str(s) + ' Complete')
