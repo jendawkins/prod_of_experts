@@ -44,7 +44,7 @@ def main():
     #                     DT=args.delta_t,outdir = args.outdir)
     # elif args.use_mm and args.aval and args.outdir:
     spl = SplineLearnerPOE_4D(
-        use_mm=args.use_mm, a=args.aval, outdir=args.outdir, bypass_f1=args.useF1)
+        use_mm=args.use_mm, a=args.aval, outdir=args.outdir, bypass_f1=args.useF1, MEAS_VAR=args.mvar)
     with open(args.outdir + '_class', 'wb') as f:
         pickle.dump(spl, f)
     spl.run(gibbs_steps=args.gibbs_steps)
