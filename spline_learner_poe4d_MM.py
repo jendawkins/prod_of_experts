@@ -110,6 +110,7 @@ class SplineLearnerPOE_4D():
         # plt.plot(Y_est0[0][:,0])
         # plt.show()
         # import pdb; pdb.set_trace()
+        self.use_mm=0
 
 
     def bsplines(self, xi, x, bug1, bug2, k=3):
